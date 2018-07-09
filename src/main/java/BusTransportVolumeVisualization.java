@@ -1,6 +1,8 @@
 import Services.DataPoa;
+import Services.MapsDataGenerator;
 import TransportModels.BusLine;
 import TransportModels.BusSchedule;
+import Services.MapsDataGenerator.*;
 
 import java.util.List;
 
@@ -16,6 +18,10 @@ public class BusTransportVolumeVisualization {
 
         List<BusSchedule> busScheduleList = DataPoa.GetBusSchedulesCached();
 
-        System.out.println(busScheduleList.get(0).line.name);
+        //busScheduleList.
+
+        //System.out.println(busScheduleList.get(0).line.name);
+
+        //MapsRequestBuilder builder = MapsRequestBuilder.Builder().setExtents()
     }
 }

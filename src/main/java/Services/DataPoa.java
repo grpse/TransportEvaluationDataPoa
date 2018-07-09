@@ -2,6 +2,7 @@ package Services;
 
 import TransportModels.BusLine;
 import TransportModels.BusSchedule;
+import TransportModels.Location;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -28,6 +29,41 @@ public class DataPoa
     private static final String BusScheduleUrl = "http://www.poatransporte.com.br/php/facades/process.php?a=il&p=#ID#&t=o";
     private static final String BusLinesUrl = "http://www.poatransporte.com.br/php/facades/process.php?a=nc&p=&t=o";
     private static final String BusSchedulesCachedFile = "bus_schedules.json";
+
+    public static class Extents
+    {
+        public Location min, max;
+    }
+
+    public static Extents FindExtents(List<BusSchedule> busScheduleList)
+    {
+        Extents extents = new Extents();
+        extents.max.latitude = Double.MIN_VALUE;
+        extents.max.longitude = Double.MIN_VALUE;
+        extents.min.latitude = Double.MAX_VALUE;
+        extents.min.longitude = Double.MAX_VALUE;
+
+        for (BusSchedule busSchedule : busScheduleList)
+        {
+            for (Location location : busSchedule.schedule)
+            {
+
+                if (location.latitude > extents.max.latitude)
+                    extents.max.latitude = location.latitude;
+
+                if (location.longitude > extents.max.longitude)
+                    extents.max.longitude = location.longitude;
+
+                if (location.latitude < extents.min.latitude)
+                    extents.min.latitude = location.latitude;
+
+                if (location.longitude < extents.min.longitude)
+                    extents.min.longitude = location.longitude;
+            }
+        }
+
+        return extents;
+    }
 
     public static List<BusSchedule> GetBusSchedulesCached()
     {
