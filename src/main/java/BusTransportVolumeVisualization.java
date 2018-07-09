@@ -14,9 +14,8 @@ public class BusTransportVolumeVisualization {
         dataPath = System.getProperty("user.dir") + "\\src\\main\\resources";
         System.out.println("Working Dir: " + dataPath);
 
-        List<BusSchedule> busScheduleList = DataPoa.GetBusSchedules();
+        List<BusSchedule> busScheduleList = DataPoa.GetBusSchedulesCached();
 
-
-
+        System.out.println(busScheduleList.get(0).line.name);
     }
 }

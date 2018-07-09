@@ -11,4 +11,14 @@ public class BusLine {
         code = jsonObject.getString("codigo");
         name = jsonObject.getString("nome");
     }
+
+    public JSONObject toJSONObject()
+    {
+        JSONObject busLine = new JSONObject();
+        busLine.put("id", id);
+        busLine.put("codigo", code);
+        busLine.put("nome", name);
+
+        return busLine;
+    }
 }

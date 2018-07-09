@@ -28,13 +28,28 @@ public class BusSchedule {
         {
             JSONObject locationObject = busScheduleObject.getJSONObject(locationPositionName);
             Location latLng = new Location();
-
-            latLng.latitude = Double.parseDouble(locationObject.getString("lat"));
-            latLng.longitude = Double.parseDouble(locationObject.getString("lng"));
-
+            latLng.parse(locationObject);
             schedule.add(latLng);
 
             locationPositionName = "" + ++locationPosition;
         }
+    }
+
+    public JSONObject toJSONObject()
+    {
+        JSONObject jsonObject = new JSONObject();
+
+        jsonObject.put("idlinha", line.id);
+        jsonObject.put("codigo", line.code);
+        jsonObject.put("nome", line.name);
+
+        for (int locationPosition = 0; locationPosition < schedule.size(); locationPosition++)
+        {
+            Location location = schedule.get(locationPosition);
+            String locationPositionName = "" + locationPosition;
+            jsonObject.put(locationPositionName, location.toJSONObject());
+        }
+
+        return jsonObject;
     }
 }
