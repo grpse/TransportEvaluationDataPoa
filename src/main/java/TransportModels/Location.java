@@ -5,6 +5,11 @@ import org.json.JSONObject;
 public class Location {
     public double latitude, longitude;
 
+    public String toString()
+    {
+        return ""+latitude + "," + longitude;
+    }
+
     public void parse(JSONObject jsonObject)
     {
         latitude = Double.parseDouble(jsonObject.getString("lat"));

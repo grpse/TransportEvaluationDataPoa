@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DataPoa
+public class PoaTransporte
 {
 
     private static final String BusScheduleUrl = "http://www.poatransporte.com.br/php/facades/process.php?a=il&p=#ID#&t=o";
@@ -32,22 +32,29 @@ public class DataPoa
 
     public static class Extents
     {
-        public Location min, max;
+        public Location min = new Location();
+        public Location max = new Location();
+
+        public String toString()
+        {
+            return "Min: " + min + "\n" + "Max: " + max;
+        }
     }
 
     public static Extents FindExtents(List<BusSchedule> busScheduleList)
     {
         Extents extents = new Extents();
-        extents.max.latitude = Double.MIN_VALUE;
-        extents.max.longitude = Double.MIN_VALUE;
-        extents.min.latitude = Double.MAX_VALUE;
-        extents.min.longitude = Double.MAX_VALUE;
+        extents.max.latitude = Double.NEGATIVE_INFINITY;
+        extents.max.longitude = Double.NEGATIVE_INFINITY;
+        extents.min.latitude = Double.POSITIVE_INFINITY;
+        extents.min.longitude = Double.POSITIVE_INFINITY;
+
+        System.out.println(extents);
 
         for (BusSchedule busSchedule : busScheduleList)
         {
             for (Location location : busSchedule.schedule)
             {
-
                 if (location.latitude > extents.max.latitude)
                     extents.max.latitude = location.latitude;
 
@@ -72,7 +79,6 @@ public class DataPoa
             try {
                 byte[] jsonContent = Files.readAllBytes(Paths.get(BusSchedulesCachedFile));
                 String jsonStringContent = new String(jsonContent, Charset.defaultCharset());
-                System.out.println(jsonStringContent);
                 JSONArray jsonArray = new JSONArray(jsonStringContent);
                 return ParseBusSchedule(jsonArray);
 
