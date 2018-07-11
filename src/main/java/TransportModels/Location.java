@@ -5,6 +5,17 @@ import org.json.JSONObject;
 public class Location {
     public double latitude, longitude;
 
+    public Location()
+    {
+
+    }
+
+    public Location(double latitude, double longitude) {
+
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
     public String toString()
     {
         return ""+latitude + "," + longitude;

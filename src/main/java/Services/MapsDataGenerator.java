@@ -1,16 +1,24 @@
 package Services;
 
+import ImageEdit.ImageEditor;
+import ImageEdit.ThreadedImageEditor;
+import TransportModels.BusSchedule;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import org.apache.http.client.utils.URIBuilder;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 public class MapsDataGenerator
 {
@@ -20,16 +28,11 @@ public class MapsDataGenerator
     static final String MapImageFileCached = "maps_image.png";
     public static Path GetMapImage(String url)
     {
-        if (Files.exists(Paths.get(MapImageFileCached))) {
-            return Paths.get(MapImageFileCached);
-        }
-        else {
-            byte[] imageData = Get(url);
-            try {
-                return Files.write(Paths.get(MapImageFileCached), imageData);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        byte[] imageData = Get(url);
+        try {
+            return Files.write(Paths.get(MapImageFileCached), imageData);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return null;
@@ -68,7 +71,7 @@ public class MapsDataGenerator
 
     public static class MapsRequestBuilder
     {
-        int width = 1280, height = 1280, scale = 2, zoom = 12;
+        int width = 1280, height = 1280, scale = 2, zoom = 11;
         String type = "roadmap";
 
         PoaTransporte.Extents extents;
@@ -141,5 +144,74 @@ public class MapsDataGenerator
 
             return "";
         }
+    }
+
+    public static Path PopulateMapWithIntensityData(Path baseImage, Path mapImagePath, List<BusSchedule> busScheduleList, int threadCount, int zoomLevel, JProgressBar progressBar)
+    {
+        try
+        {
+
+            BufferedImage img = ImageIO.read(baseImage.toFile());
+            ImageEditor editor = new ImageEditor(img);
+
+            // Divide threads between bus schedules
+            ThreadedImageEditor[] threads = new ThreadedImageEditor[threadCount];
+            int threadDataDivision = (int)Math.floor(busScheduleList.size() / threadCount);
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                // Define thread data boundaries
+                int threadBoundStart = threadDataDivision * i;
+                int threadBoundEnd = threadDataDivision * (i + 1);
+
+                // last thread, if it's not a round division, have to access the remaining slot of data
+                if (i == threadCount - 1 && busScheduleList.size() % threadCount > 0 && threadCount > 1)
+                {
+                    threadBoundEnd += 1;
+                }
+
+                // start image editor thread
+                threads[i] = new ThreadedImageEditor(threadBoundStart, threadBoundEnd, busScheduleList, editor, zoomLevel);
+                threads[i].start();
+            }
+
+            new Thread(() -> {
+                synchronized (progressBar)
+                {
+                    float totalProgress = 0f;
+                    while(totalProgress < 100)
+                    {
+                        totalProgress = 0f;
+
+
+                        for (int i = 0; i < threads.length; i++)
+                        {
+                            totalProgress += threads[i].getProgress();
+                        }
+
+                        totalProgress /= threads.length;
+                        totalProgress = Math.round(totalProgress * 100);
+                        progressBar.setValue((int)totalProgress);
+                    }
+
+                    System.out.println("Done Processing Image");
+                }
+            }).start();
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                threads[i].join();
+            }
+
+            editor.saveImage(mapImagePath);
+
+            return mapImagePath;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

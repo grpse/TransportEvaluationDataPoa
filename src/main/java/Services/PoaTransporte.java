@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import sun.net.www.http.HttpClient;
 
+import javax.swing.*;
 import javax.xml.ws.WebServiceClient;
 import java.io.IOException;
 import java.net.URI;
@@ -72,7 +73,7 @@ public class PoaTransporte
         return extents;
     }
 
-    public static List<BusSchedule> GetBusSchedulesCached()
+    public static List<BusSchedule> GetBusSchedulesCached(JProgressBar progressProcessing, int threadCount)
     {
         if (Files.exists(Paths.get(BusSchedulesCachedFile)))
         {
@@ -88,7 +89,7 @@ public class PoaTransporte
         }
         else
         {
-            List<BusSchedule> busScheduleList = GetBusSchedules();
+            List<BusSchedule> busScheduleList = GetBusSchedules(progressProcessing, threadCount);
             JSONArray jsonArray = ToJSONArray(busScheduleList);
             try {
                 Files.write(Paths.get(BusSchedulesCachedFile), jsonArray.toString().getBytes());
@@ -99,6 +100,71 @@ public class PoaTransporte
             return busScheduleList;
         }
         return null;
+    }
+
+    public static List<BusSchedule> GetBusSchedules(JProgressBar progressProcessing, int threadCount)
+    {
+        List<BusLine> busLineList = GetBusLines();
+        List<BusSchedule> busScheduleList = new ArrayList<>();
+
+
+        ThreadedBusScheduleDownloader[] thread = new ThreadedBusScheduleDownloader[threadCount];
+
+        // Divide data to download between n threads
+        int dataDivision = busLineList.size()/threadCount;
+
+        // Start download of data for each thread
+        for (int i = 0; i < threadCount; i++)
+        {
+            int start = i * dataDivision;
+            int end = (i + 1) * dataDivision;
+
+            if (i == threadCount - 1 && busLineList.size()/(float)threadCount > 0)
+            {
+                end += 1;
+            }
+
+            thread[i] = new ThreadedBusScheduleDownloader(start, end, busLineList);
+            thread[i].start();
+        }
+
+        // thread that monitors the percentage of download
+        new Thread(() -> {
+
+            synchronized (progressProcessing)
+            {
+                float totalProgress = 0;
+                while(totalProgress < 100)
+                {
+                    for (int i = 0; i < threadCount; i++)
+                    {
+                        totalProgress += thread[i].getProcess();
+                    }
+
+                    totalProgress /= thread.length;
+
+                    totalProgress = Math.round(totalProgress * 100);
+                    progressProcessing.setValue((int) totalProgress);
+                }
+            }
+        }).start();
+
+        // Join each individual thread
+        for (int i = 0; i < threadCount; i++)
+        {
+            try {
+                thread[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Adding all individual data together
+        for (int i = 0; i < threadCount; i++)
+        {
+            busScheduleList.addAll(thread[i].getBusScheduleList());
+        }
+        return busScheduleList;
     }
 
     public static List<BusSchedule> GetBusSchedules()
