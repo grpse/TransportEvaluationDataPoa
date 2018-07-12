@@ -12,7 +12,7 @@ public class BusSchedule {
     public BusSchedule()
     {
         line = new BusLine();
-        schedule = new ArrayList<>();
+        schedule = new ArrayList<Location>();
     }
 
     public void parse(JSONObject busScheduleObject)

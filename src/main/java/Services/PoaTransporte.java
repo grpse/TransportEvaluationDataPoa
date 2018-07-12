@@ -105,7 +105,7 @@ public class PoaTransporte
     public static List<BusSchedule> GetBusSchedules(JProgressBar progressProcessing, int threadCount)
     {
         List<BusLine> busLineList = GetBusLines();
-        List<BusSchedule> busScheduleList = new ArrayList<>();
+        List<BusSchedule> busScheduleList = new ArrayList<BusSchedule>();
 
 
         ThreadedBusScheduleDownloader[] thread = new ThreadedBusScheduleDownloader[threadCount];
